@@ -235,7 +235,20 @@ class CharacterDeleteView(DestroyAPIView):
 
 class ClassesListView(ListAPIView):
     serializer_class = ClassesCharSerializer
-    queryset = ClassesChar.objects.all()
+    # make queryset that filter objects depend on the choice
+    # icontains lower and upper case all good
+    # & veze 2 queri parametra u browseru
+    # ? set query in browser
+
+    def get_queryset(self):
+        qs = ClassesChar.objects.all()
+        char = self.request.query_params.get('name')
+        choice = self.request.query_params.get('choice')
+        if char:
+            qs = qs.filter(char__name__icontains=char)
+        if choice:
+            qs = qs.filter(choice=choice)
+        return qs
 
 
 class ClassesRetrieveView(RetrieveAPIView):
