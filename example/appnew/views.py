@@ -7,10 +7,10 @@ from rest_framework.generics import (
     UpdateAPIView,
     DestroyAPIView
 )
-from .models import Bezveze, Storage, Item
-from .serializers import BezvezeSerializer, StorageSerializer, ItemSerializer, StorageDetailSerializer
+from .models import Bezveze, Storage, Item, ClassesChar, Character
+from .serializers import BezvezeSerializer, StorageSerializer, ItemSerializer, StorageDetailSerializer, CharacterSerializer, ClassesCharSerializer, ClassesDetailSerializer
 from rest_framework.response import Response
-from rest_framework import status
+from rest_framework import status, viewsets
 
 
 class BezvezeMixin(object):
@@ -82,6 +82,7 @@ class StorageMixin(object):
     def get_object(self):
         id = self.kwargs['id']
         obj_mod = Storage.objects.get(item__id=id)
+        print(obj_mod.item_description)
         return obj_mod
 
 
@@ -104,7 +105,7 @@ class ItemCreateView(CreateAPIView):
         data_one = request.data
         serializer = self.get_serializer(data=data_one)
         serializer.is_valid(raise_exception=True)
-        serializer.save()
+        serializer.create(validated_data=request.data)
         return Response(
             serializer.data,
             status=status.HTTP_201_CREATED
@@ -120,7 +121,7 @@ class ItemUpdateView(UpdateAPIView):
         instance = self.get_object()
         serializer = self.get_serializer(instance, data=request.data)
         serializer.is_valid(raise_exception=True)
-        serializer.save()
+        serializer.update(instance=instance, validated_data=request.data)
         print(self.kwargs)
 
         return Response(
@@ -175,3 +176,155 @@ class StorageUpdateView(UpdateAPIView):
             status=status.HTTP_200_OK
         )
 
+
+class CharMixin(object):
+    def get_object(self):
+        id = self.kwargs['id']
+        obj_mod = Character.objects.get(id=id)
+        return obj_mod
+
+
+class CharacterListView(ListAPIView):
+    serializer_class = CharacterSerializer
+    queryset = Character.objects.all()
+
+
+class CharacterRetrieveView(CharMixin, RetrieveAPIView):
+    serializer_class = CharacterSerializer
+    queryset = Character.objects.all()
+
+
+class CharacterCreateView(CreateAPIView):
+    serializer_class = CharacterSerializer
+    queryset = Character.objects.all()
+
+    def create(self, request, *args, **kwargs):
+        data_one = request.data
+        serializer = self.get_serializer(data=data_one)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response(
+            serializer.data,
+            status=status.HTTP_201_CREATED
+        )
+
+
+class CharacterUpdateView(UpdateAPIView):
+    serializer_class = CharacterSerializer
+    queryset = Character.objects.all()
+    lookup_url_kwarg = 'id'
+
+    def update(self, request, *args, **kwargs):
+        instance = self.get_object()
+        serializer = self.get_serializer(instance, data=request.data)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        print(self.kwargs)
+
+        return Response(
+            serializer.data,
+            status=status.HTTP_200_OK
+        )
+
+
+class CharacterDeleteView(DestroyAPIView):
+    serializer_class = CharacterSerializer
+    queryset = Character.objects.all()
+    lookup_url_kwarg = 'id'
+
+
+class ClassesListView(ListAPIView):
+    serializer_class = ClassesCharSerializer
+    queryset = ClassesChar.objects.all()
+
+
+class ClassesRetrieveView(RetrieveAPIView):
+    serializer_class = ClassesCharSerializer
+    queryset = ClassesChar.objects.all()
+    lookup_url_kwarg = 'id'
+
+
+class ClassesNewView(CreateAPIView):
+    serializer_class = ClassesDetailSerializer
+    queryset = ClassesChar.objects.all()
+
+    def create(self, request, *args, **kwargs):
+        data_one = request.data
+        char_id = request.data.get('char')
+        try:
+            char = Character.objects.get(id=char_id)
+        except Item.DoesNotExist:
+            char = Character()
+            char.save()
+        serialize = self.get_serializer(data=data_one)
+        serialize.is_valid(raise_exception=True)
+        serialize.save(char=char)
+
+        return Response(
+            serialize.data,
+            status=status.HTTP_201_CREATED
+        )
+
+
+class ClassesUpdateView(UpdateAPIView):
+    serializer_class = ClassesDetailSerializer
+    queryset = ClassesChar.objects.all()
+    lookup_url_kwarg = 'id'
+
+    def update(self, request, *args, **kwargs):
+        instance = self.get_object()
+        serializer = self.get_serializer(instance, data=request.data)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        print(self.kwargs)
+
+        return Response(
+            serializer.data,
+            status=status.HTTP_200_OK
+        )
+
+
+class ClassesDestroyView(DestroyAPIView):
+    serializer_class = ClassesDetailSerializer
+    queryset = ClassesChar.objects.all()
+    lookup_url_kwarg = 'id'
+
+
+class ItemMixin(object):
+    def get_object(self):
+        print(self.kwargs)
+        id = self.kwargs['id']
+        obj_mod = Item.objects.get(id=id)
+        return obj_mod
+
+
+# View set we can have all etc. update, retrive and delete in same view
+
+
+class ItemViewSet(ItemMixin, viewsets.ModelViewSet):
+    serializer_class = ItemSerializer
+    queryset = Item.objects.all()
+
+    def retrieve(self, request, *args, **kwargs):
+
+        # self.get_object is method from ItemMixin and it pass it to ItemViewSet
+
+        obj = self.get_object()
+        serializer = self.get_serializer(obj)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+    def update(self, request, *args, **kwargs):
+        instance = self.get_object()
+        serializer = self.get_serializer(instance, data=request.data)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+
+        return Response(
+            serializer.data,
+            status=status.HTTP_200_OK
+        )
+
+    def destroy(self, request, *args, **kwargs):
+        instance = self.get_object()
+        self.perform_delete(instance)
+        return Response(status=status.HTTP_204_NO_CONTENT)
