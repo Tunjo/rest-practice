@@ -21,9 +21,6 @@ class AdminClassesChar(admin.ModelAdmin):
     list_display = ('char', 'choice')
 
 
-
-
-
 admin.site.register(Bezveze, AdminBezveze)
 admin.site.register(Item, AdminItem)
 admin.site.register(Storage, AdminStorage)
