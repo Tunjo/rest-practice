@@ -1,5 +1,15 @@
 from rest_framework import serializers
-from .models import Bezveze, Storage, Item, Character, ClassesChar
+from .models import (
+    Bezveze,
+    Storage,
+    Item,
+    Character,
+    ClassesChar,
+    Order,
+    Costumer,
+    BlackberryVine
+)
+
 
 
 class BezvezeSerializer(serializers.ModelSerializer):
@@ -8,7 +18,8 @@ class BezvezeSerializer(serializers.ModelSerializer):
         fields = (
             'name',
             'sur_name',
-            'last_name'
+            'last_name',
+            'id'
         )
 
 
@@ -101,4 +112,73 @@ class ClassesDetailSerializer(serializers.ModelSerializer):
             'char',
             'choice'
         )
+
+
+class BVineSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = BlackberryVine
+        fields = (
+            'vine_choice',
+        )
+
+    vine_choice = serializers.SerializerMethodField()
+
+    def get_vine_choice(self, blackberry):
+        return blackberry.get_vine_choice_display()
+
+
+class OrderSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Order
+        fields = ('order', )
+
+    order = serializers.SerializerMethodField()
+
+    def get_order(self, ord):
+        return ord.get_order_display()
+
+
+class CostumerSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Costumer
+        fields = (
+            'name',
+            'address',
+            'comment',
+            'ord',
+            'product',
+            'order',
+            'prod'
+        )
+
+    #ord = serializers.CharField(source='ord.pk', write_only=True)
+    #order = OrderSerializer(read_only=True)
+    order = serializers.SerializerMethodField()
+    #product = serializers.CharField(source='product.pk', write_only=True)
+    #prod = BVineSerializer(read_only=True)
+    prod = serializers.SerializerMethodField()
+
+    def get_order(self, obj):
+        return OrderSerializer(obj.ord).data
+
+    def get_prod(self, obj):
+        return BVineSerializer(obj.product).data
+
+
+class CostumerSerializerDisplay(serializers.ModelSerializer):
+    class Meta:
+        model = Costumer
+        fields = (
+            'name',
+            'address',
+            'comment',
+            'ord',
+            'product'
+        )
+
+    ord = OrderSerializer()
+    product = BVineSerializer()
+
+
+
 

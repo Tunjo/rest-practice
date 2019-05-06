@@ -42,3 +42,39 @@ class ClassesChar(models.Model):
 
     char = models.ForeignKey(Character, on_delete=models.CASCADE)
     choice = models.PositiveSmallIntegerField(choices=CLASS_LIST)
+
+
+class BlackberryVine(models.Model):
+
+    VINE_CHOICE = (
+        (1, 'Blackberry075'),
+        (2, 'Blackberry050'),
+        (3, 'Blackberry025')
+    )
+
+    vine_choice = models.PositiveSmallIntegerField(choices=VINE_CHOICE)
+
+    def __str__(self):
+        return self.get_vine_choice_display()
+
+
+class Order(models.Model):
+
+    ORDER_CHOICE = (
+        (1, 'Palette'),
+        (2, 'Box'),
+        (3, 'Individual')
+    )
+
+    order = models.PositiveSmallIntegerField(choices=ORDER_CHOICE)
+
+    def __str__(self):
+        return self.get_order_display()
+
+
+class Costumer(models.Model):
+    product = models.ForeignKey(BlackberryVine, on_delete=models.CASCADE)
+    ord = models.ForeignKey(Order, on_delete=models.CASCADE)
+    name = models.CharField(max_length=30)
+    address = models.CharField(max_length=30)
+    comment = models.TextField(blank=True)

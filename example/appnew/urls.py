@@ -5,6 +5,9 @@ urlpatterns = [
     url(r'^list-bezveze/$',
         bezveze_views.BezvezeListView.as_view()
         ),
+    url(r'^list-bezvz/$',
+        bezveze_views.BzvzNewListView.as_view()
+        ),
     url(r'^(?P<id>[\d\w-]+)/bezveze/$',
         bezveze_views.BezvezeRetrieveView.as_view()
         ),
@@ -67,5 +70,20 @@ urlpatterns = [
         ),
     url(r'^(?P<id>[\d\w-]+)/class/delete/$',
         bezveze_views.ClassesDestroyView.as_view()
-        )
+        ),
+    url(r'^list-blackberry/$',
+        bezveze_views.BVineListView.as_view()
+        ),
+    url(r'^blackberry/add/$',
+        bezveze_views.BVineCreateView.as_view()
+        ),
+    url(r'^order/add/$',
+        bezveze_views.OrderCreateView.as_view()
+        ),
+    url(r'^list-costumer/$',
+        bezveze_views.CostumerListView.as_view()
+        ),
+    url(r'^costumer/add/$',
+        bezveze_views.CostumerCreateView.as_view()
+        ),
 ]

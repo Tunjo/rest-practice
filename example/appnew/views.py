@@ -7,10 +7,32 @@ from rest_framework.generics import (
     UpdateAPIView,
     DestroyAPIView
 )
-from .models import Bezveze, Storage, Item, ClassesChar, Character
-from .serializers import BezvezeSerializer, StorageSerializer, ItemSerializer, StorageDetailSerializer, CharacterSerializer, ClassesCharSerializer, ClassesDetailSerializer
+from .models import (
+    Bezveze,
+    Storage,
+    Item,
+    ClassesChar,
+    Character,
+    BlackberryVine,
+    Costumer,
+    Order
+)
+from .serializers import (
+    BezvezeSerializer,
+    StorageSerializer,
+    ItemSerializer,
+    StorageDetailSerializer,
+    CharacterSerializer,
+    ClassesCharSerializer,
+    ClassesDetailSerializer,
+    BVineSerializer,
+    CostumerSerializer,
+    OrderSerializer,
+    CostumerSerializerDisplay
+)
 from rest_framework.response import Response
-from rest_framework import status, viewsets
+from rest_framework import status, viewsets, filters
+from example.appnew.pagination import ResultPagePagination
 
 
 class BezvezeMixin(object):
@@ -30,6 +52,41 @@ class BezvezeListView(ListAPIView):
         q_operator = Q(name='Tunjo') | Q(last_name='sadasd')
         obj = Bezveze.objects.filter(q_operator)
         return obj
+
+
+class BzvzNewListView(ListAPIView):
+    serializer_class = BezvezeSerializer
+    queryset = Bezveze.objects.all()
+    pagination_class = ResultPagePagination
+    filter_backends = (
+        filters.SearchFilter,
+        filters.OrderingFilter
+    )
+
+    search_fields = (
+        'name',
+        'sur_name',
+        'last_name'
+    )
+
+    ordering_fields = (
+        'name',
+        'sur_name',
+        'last_name'
+    )
+
+    def get_ordered_queryset(self, qs, order):
+        order_by = ()
+        if not order:
+            order_by = (
+                'name',
+            )
+        return qs.order_by(*order_by)
+
+    def get_queryset(self):
+        qs = Bezveze.objects.all()
+        qs = self.get_ordered_queryset(qs, self.request.query_params.get('ordering'))
+        return qs
 
 
 class BezvezeRetrieveView(RetrieveAPIView):
@@ -88,7 +145,14 @@ class StorageMixin(object):
 
 class StorageListView(ListAPIView):
     serializer_class = StorageSerializer
-    queryset = Storage.objects.all()
+    # queryset = Storage.objects.all()
+
+    def get_queryset(self):
+        qs = Storage.objects.all()
+        id = self.request.query_params.get('id')
+        if id:
+            qs = qs.filter(item_id=id)
+        return qs
 
 
 class StorageRetrieveView(StorageMixin, RetrieveAPIView):
@@ -266,7 +330,7 @@ class ClassesNewView(CreateAPIView):
         char_id = request.data.get('char')
         try:
             char = Character.objects.get(id=char_id)
-        except Item.DoesNotExist:
+        except Character.DoesNotExist:
             char = Character()
             char.save()
         serialize = self.get_serializer(data=data_one)
@@ -341,3 +405,88 @@ class ItemViewSet(ItemMixin, viewsets.ModelViewSet):
         instance = self.get_object()
         self.perform_delete(instance)
         return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+class BVineListView(ListAPIView):
+    serializer_class = BVineSerializer
+    queryset = BlackberryVine.objects.all()
+
+
+class BVineCreateView(CreateAPIView):
+    serializer_class = BVineSerializer
+    queryset = BlackberryVine.objects.all()
+
+    def create(self, request, *args, **kwargs):
+        data_one = request.data
+        serializer = self.get_serializer(data=data_one)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response(
+            serializer.data,
+            status=status.HTTP_201_CREATED
+        )
+
+
+class OrderCreateView(CreateAPIView):
+    serializer_class = OrderSerializer
+    queryset = Order.objects.all()
+
+    def create(self, request, *args, **kwargs):
+        data_one = request.data
+        serializer = self.get_serializer(data=data_one)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response(
+            serializer.data,
+            status=status.HTTP_201_CREATED
+        )
+
+
+class CostumerListView(ListAPIView):
+    serializer_class = CostumerSerializer
+
+    def get_queryset(self):
+        qs = Costumer.objects.all()
+        ord = self.request.query_params.get('ord')
+        product = self.request.query_params.get('product')
+        if ord:
+            qs = qs.filter(ord=ord)
+        if product:
+            qs = qs.filter(product=product)
+        return qs
+
+
+class CostumerCreateView(CreateAPIView):
+    serializer_class = CostumerSerializer
+    queryset = Costumer.objects.all()
+
+    def create(self, request, *args, **kwargs):
+        data_one = request.data
+        print(request.data)
+        ord_id = request.data.get('ord')
+        prod_id = request.data.get('product')
+        try:
+            ord = Order.objects.get(id=ord_id)
+        except Order.DoesNotExist:
+            ord = Order()
+            ord.order = 1
+            ord.save()
+            # item = Item.objects.create(name='bla bla', description='sve je top', price=33.43)
+            # .. -- same as instance create and item.save() ----- that is same thing
+        try:
+            product = BlackberryVine.objects.get(id=prod_id)
+        except BlackberryVine.DoesNotExist:
+            product = BlackberryVine()
+            product.vine_choice = 2
+            product.save()
+
+        serialize = self.get_serializer(data=data_one)
+        serialize.is_valid(raise_exception=True)
+        serialize.save(ord=ord, product=product)
+
+        return Response(
+            serialize.data,
+            status=status.HTTP_201_CREATED
+        )
+
+
